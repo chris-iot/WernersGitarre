@@ -1,20 +1,33 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
+// NodeMCU V3 Pin Mapping (D-pins to GPIO)
+#define D0 16
+#define D1 5
+#define D2 4
+#define D3 0
+#define D4 2
+#define D5 14
+#define D6 12
+#define D7 13
+#define D8 15
+
 // Constants
-#define NUM_STRIPS 4
+#define NUM_STRIPS 6
 #define NUM_LEDS_PER_STRIP 128
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 #define BRIGHTNESS 120
 
-const uint8_t DATA_PINS[NUM_STRIPS] = {2, 3, 4, 5};
+const uint8_t DATA_PINS[NUM_STRIPS] = {D4, D2, D1, D6, D7, D5};
 const uint8_t POT_PIN = A0;
 
 CRGB leds[NUM_STRIPS][NUM_LEDS_PER_STRIP];
 
 uint8_t currentPattern = 0;
 uint8_t gHue = 0;
+uint8_t lastPattern = 255;
+unsigned long lastLogTime = 0;
 
 void fillAll(CRGB color) {
   for (uint8_t strip = 0; strip < NUM_STRIPS; strip++) {
@@ -119,17 +132,59 @@ void patternStackedWaves() {
   }
 }
 
+void logStatus() {
+  unsigned long now = millis();
+  if (now - lastLogTime < 1000) {
+    return;
+  }
+  lastLogTime = now;
+  if (currentPattern != lastPattern) {
+    Serial.print("Pattern selected: ");
+    Serial.println(currentPattern);
+    lastPattern = currentPattern;
+  } else {
+    Serial.print("Running pattern ");
+    Serial.print(currentPattern);
+    Serial.print("  Hue= ");
+    Serial.println(gHue);
+  }
+}
+
 void updatePatternFromPot() {
   int potValue = analogRead(POT_PIN);
-  currentPattern = map(potValue, 0, 1023, 0, 9);
+  if (potValue < 0 || potValue > 1023) {
+    currentPattern = 0;
+    Serial.println("Potentiometer read invalid, defaulting to pattern 0");
+  } else {
+    currentPattern = map(potValue, 0, 1023, 0, 9);
+    Serial.print("Pot value = ");
+    Serial.print(potValue);
+    Serial.print(", selecting pattern ");
+    Serial.println(currentPattern);
+  }
 }
 
 void setup() {
   delay(1000);
-  FastLED.addLeds<LED_TYPE, 2, COLOR_ORDER>(leds[0], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, 3, COLOR_ORDER>(leds[1], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, 4, COLOR_ORDER>(leds[2], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, 5, COLOR_ORDER>(leds[3], NUM_LEDS_PER_STRIP);
+  Serial.begin(115200);
+  Serial.println("Starting FastLED NodeMCU controller");
+  Serial.print("Data pins: ");
+  for (uint8_t i = 0; i < NUM_STRIPS; i++) {
+    Serial.print(DATA_PINS[i]);
+    if (i + 1 < NUM_STRIPS) {
+      Serial.print(", ");
+    }
+  }
+  Serial.println();
+  currentPattern = 0;
+  lastPattern = 255;
+
+  FastLED.addLeds<LED_TYPE, D4, COLOR_ORDER>(leds[0], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D2, COLOR_ORDER>(leds[1], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D1, COLOR_ORDER>(leds[2], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D6, COLOR_ORDER>(leds[3], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D7, COLOR_ORDER>(leds[4], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D5, COLOR_ORDER>(leds[5], NUM_LEDS_PER_STRIP);
   FastLED.setBrightness(BRIGHTNESS);
   pinMode(POT_PIN, INPUT);
 }
@@ -171,6 +226,7 @@ void loop() {
   }
 
   FastLED.show();
+  logStatus();
   gHue++;
   delay(20);
 }
