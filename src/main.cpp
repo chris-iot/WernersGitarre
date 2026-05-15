@@ -25,6 +25,8 @@ const uint8_t POT_PIN = A0;
 CRGB leds[NUM_STRIPS][NUM_LEDS_PER_STRIP];
 
 uint8_t currentPattern = 0;
+uint8_t lastPatternIndex = 255;
+bool patternChanged = false;
 uint8_t gHue = 0;
 uint8_t lastPattern = 255;
 unsigned long lastLogTime = 0;
@@ -214,27 +216,22 @@ void logStatus() {
 }
 
 void updatePatternFromPot() {
-  static bool zeroMode = true;
-  const int zeroEnter = 80;
-  const int zeroExit = 120;
   int potValue = analogRead(POT_PIN);
   potValue = constrain(potValue, 0, 1023);
-  if (zeroMode) {
-    if (potValue > zeroExit) {
-      zeroMode = false;
-    }
+  
+  uint8_t newPattern;
+  if (potValue < 140) {
+    newPattern = 0;  // Pattern 0 (Werner) spans 0-140
   } else {
-    if (potValue < zeroEnter) {
-      zeroMode = true;
-    }
+    newPattern = map(potValue, 140, 1023, 1, 10);
+    newPattern = constrain(newPattern, 1, 10);
   }
-
-  if (zeroMode) {
-    currentPattern = 0;
-  } else {
-    currentPattern = map(potValue, zeroExit, 1023, 1, 10);
-    currentPattern = constrain(currentPattern, 1, 10);
+  
+  if (newPattern != lastPatternIndex) {
+    patternChanged = true;
+    lastPatternIndex = newPattern;
   }
+  currentPattern = newPattern;
 }
 
 void setup() {
@@ -250,7 +247,9 @@ void setup() {
   }
   Serial.println();
   currentPattern = 0;
+  lastPatternIndex = 0;
   lastPattern = 255;
+  patternChanged = false;
 
   FastLED.addLeds<LED_TYPE, D1, COLOR_ORDER>(leds[0], NUM_LEDS_PER_STRIP);
   FastLED.addLeds<LED_TYPE, D2, COLOR_ORDER>(leds[1], NUM_LEDS_PER_STRIP);
@@ -264,6 +263,7 @@ void setup() {
 
 void loop() {
   updatePatternFromPot();
+  patternChanged = false;  // Clear flag after checking patterns
 
   switch (currentPattern) {
     case 0:
