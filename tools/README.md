@@ -6,7 +6,7 @@ Python toolkit for simulating and visualizing the 9-scene Werner LED pattern wit
 
 - **font_generator.py** - Generates 6-pixel-tall bitmap fonts for text rendering
 - **werner_simulator.py** - Main simulator with all 9 scenes (Booting, Jahren, Highway, Guitar Hero, Frequency, Missing, Firmware, Flames, Pause)
-- **werner_pattern.gif** - Generated 35-second animation (1750 frames, 50 FPS)
+- **werner_pattern.gif** - Generated 45-second animation (2250 frames, 50 FPS)
 - **requirements.txt** - Python dependencies (Pillow, numpy)
 
 ## Installation
@@ -51,14 +51,14 @@ frame = sim.get_frame_data()  # Returns (6, 128, 3) numpy array (6 strips × 128
 | Scene | Duration | Description |
 |-------|----------|-------------|
 | Booting | 0-2s | "Booting" text with animated dots (•, ••, •••) |
-| Jahren | 2-6s | "41+ Jahre Werner @R&S" scrolling white text |
-| Highway | 6-12s | "Get Ready for the Highway to Hell" scrolling, white→red gradient |
-| Guitar Hero | 12-20s | Simulated note drops on colored strips (AC/DC timing) |
-| Frequency | 20-22s | "Frequency unlocked" centered, orange, fades out 22-23s |
-| Missing | 23-28s | "Missing K666" drops down row-by-row (strips reveal progressively) |
-| Firmware | 28-30s | "Firmware error" red text with flicker effect |
-| Flames | 30-32s | "FLAMES" text moving upward with color shift (orange→red→yellow) |
-| Pause | 32-35s | All black (rest) before loop repeats |
+| Jahren | 2-10s | "41+ Jahre Werner @R&S" scrolling white text |
+| Highway | 10-22s | "Get Ready for the Highway to Hell" scrolling, white→red gradient |
+| Guitar Hero | 22-30s | Simulated note drops on colored strips (AC/DC timing) |
+| Frequency | 30-32s | "Frequency unlocked" centered, orange, fades out 32-33s |
+| Missing | 33-38s | "Missing K666" drops down row-by-row (strips reveal progressively) |
+| Firmware | 38-40s | "Firmware error" red text with flicker effect |
+| Flames | 40-42s | "FLAMES" text moving upward with color shift (orange→red→yellow) |
+| Pause | 42-45s | All black (rest) before loop repeats |
 
 ## LED Array Configuration
 

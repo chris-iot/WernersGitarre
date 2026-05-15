@@ -6,7 +6,6 @@ Generates animation frames without physical hardware.
 import numpy as np
 from PIL import Image, ImageDraw
 from font_generator import create_font_bitmaps
-from collections import defaultdict
 
 # LED Configuration (matches firmware)
 NUM_STRIPS = 6
@@ -19,12 +18,7 @@ SCENE_TIMING = {
     'booting': (0, 2),
     'jahre': (2, 10),
     'highway': (10, 22),
-    'guitar': (22, 30),
-    'frequency': (30, 32),
-    'missing': (33, 38),
-    'firmware': (38, 40),
-    'flames': (40, 42),
-    'pause': (42, 45)
+    'pause': (22, 37)
 }
 
 class LEDStrip:
@@ -105,20 +99,18 @@ class WernerSimulator:
             self._scene_jahre(elapsed_sec - 2)
         elif elapsed_sec < 22:
             self._scene_highway(elapsed_sec - 10)
+        elif elapsed_sec < 24:
+            self._scene_frequency(elapsed_sec - 22)
+        elif elapsed_sec < 25:
+            pass  # Short black transition
         elif elapsed_sec < 30:
-            self._scene_guitar(elapsed_sec - 22)
+            self._scene_missing(elapsed_sec - 25)
         elif elapsed_sec < 32:
-            self._scene_frequency(elapsed_sec - 30)
-        elif elapsed_sec < 33:
-            pass  # Black screen
-        elif elapsed_sec < 38:
-            self._scene_missing(elapsed_sec - 33)
-        elif elapsed_sec < 40:
-            self._scene_firmware(elapsed_sec - 38)
-        elif elapsed_sec < 42:
-            self._scene_flames(elapsed_sec - 40)
-        elif elapsed_sec < 45:
-            pass  # Black pause
+            self._scene_firmware(elapsed_sec - 30)
+        elif elapsed_sec < 34:
+            self._scene_flames(elapsed_sec - 32)
+        elif elapsed_sec < 37:
+            pass  # Final pause
     
     def _render_text(self, text, scroll_pos, color_hsv=None):
         """
@@ -233,40 +225,6 @@ class WernerSimulator:
         saturation = min(saturation, 255)
         
         self._render_scrolling_text(text, elapsed, duration=12.0, color_hsv=(hue, saturation, 255))
-    
-    def _scene_guitar(self, elapsed):
-        """Guitar Hero: note drops on strips."""
-        # AC/DC Highway to Hell intro timing (approximated)
-        # Main beat at ~90 BPM = 0.667s per beat
-        beat_time = 0.667
-        
-        # Simulated note positions
-        notes = [
-            (0, 0),      # Strip 0 at 0s
-            (1, 0.667),
-            (2, 1.334),
-            (3, 2.0),
-            (4, 2.667),
-            (5, 3.334),
-            (0, 4.0),    # Repeat pattern
-            (1, 4.667),
-        ]
-        
-        # Draw each note as falling dot
-        for strip_idx, start_time in notes:
-            note_pos = int(120 * (elapsed - start_time) / 8.0)
-            if 0 <= note_pos < NUM_LEDS:
-                # Color per strip
-                colors = [
-                    (255, 0, 0),    # Red
-                    (0, 255, 0),    # Green
-                    (0, 0, 255),    # Blue
-                    (255, 255, 0),  # Yellow
-                    (255, 0, 255),  # Magenta
-                    (0, 255, 255),  # Cyan
-                ]
-                r, g, b = colors[strip_idx]
-                self.strips[strip_idx].set_pixel(note_pos, r, g, b)
     
     def _scene_frequency(self, elapsed):
         """Frequency unlocked: centered static text with fade."""
@@ -428,5 +386,5 @@ def generate_animation(duration_sec=35, fps=50, output_gif=None):
 
 if __name__ == "__main__":
     print("Generating Werner pattern animation...")
-    frames = generate_animation(duration_sec=45, fps=50, output_gif="werner_pattern.gif")
+    frames = generate_animation(duration_sec=37, fps=50, output_gif="werner_pattern.gif")
     print(f"Done! Generated {len(frames)} frames.")

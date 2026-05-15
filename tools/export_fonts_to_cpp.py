@@ -73,6 +73,10 @@ def export_bitmaps_for_firmware():
     cpp_lines.append("}")
     cpp_lines.append("")
     
+    cpp_lines.append("// Guitar Hero section removed from the animation sequence")
+    cpp_lines.append("// No note timing data is generated for the firmware preview.")
+    cpp_lines.append("")
+    
     # Add scene constants
     cpp_lines.append("// Scene timing constants")
     cpp_lines.append("const unsigned long SCENE_BOOTING_START = 0;")
@@ -81,21 +85,11 @@ def export_bitmaps_for_firmware():
     cpp_lines.append("const unsigned long SCENE_JAHRE_END = 10000;")
     cpp_lines.append("const unsigned long SCENE_HIGHWAY_START = 10000;")
     cpp_lines.append("const unsigned long SCENE_HIGHWAY_END = 22000;")
-    cpp_lines.append("const unsigned long SCENE_GUITAR_START = 22000;")
-    cpp_lines.append("const unsigned long SCENE_GUITAR_END = 30000;")
-    cpp_lines.append("const unsigned long SCENE_FREQUENCY_START = 30000;")
-    cpp_lines.append("const unsigned long SCENE_FREQUENCY_END = 32000;")
-    cpp_lines.append("const unsigned long SCENE_MISSING_START = 33000;")
-    cpp_lines.append("const unsigned long SCENE_MISSING_END = 38000;")
-    cpp_lines.append("const unsigned long SCENE_FIRMWARE_START = 38000;")
-    cpp_lines.append("const unsigned long SCENE_FIRMWARE_END = 40000;")
-    cpp_lines.append("const unsigned long SCENE_FLAMES_START = 40000;")
-    cpp_lines.append("const unsigned long SCENE_FLAMES_END = 42000;")
-    cpp_lines.append("const unsigned long SCENE_PAUSE_START = 42000;")
-    cpp_lines.append("const unsigned long SCENE_PAUSE_END = 45000;")
+    cpp_lines.append("const unsigned long SCENE_PAUSE_START = 22000;")
+    cpp_lines.append("const unsigned long SCENE_PAUSE_END = 37000;")
     cpp_lines.append("")
-    cpp_lines.append("// Total Werner pattern duration: 45 seconds")
-    cpp_lines.append("const unsigned long WERNER_PATTERN_DURATION = 45000;")
+    cpp_lines.append("// Total Werner pattern duration: 37 seconds")
+    cpp_lines.append("const unsigned long WERNER_PATTERN_DURATION = 37000;")
     
     return "\n".join(cpp_lines)
 
