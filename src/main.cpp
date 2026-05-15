@@ -19,7 +19,7 @@
 #define COLOR_ORDER GRB
 #define BRIGHTNESS 120
 
-const uint8_t DATA_PINS[NUM_STRIPS] = {D4, D2, D1, D6, D7, D5};
+const uint8_t DATA_PINS[NUM_STRIPS] = {D1, D2, D4, D5, D6, D7};
 const uint8_t POT_PIN = A0;
 
 CRGB leds[NUM_STRIPS][NUM_LEDS_PER_STRIP];
@@ -92,6 +92,69 @@ void patternMirrorGradient() {
   }
 }
 
+const char scrollText[] = "WERNER";
+const uint8_t letterHeight = 6;
+const uint8_t letterWidth = 5;
+const uint8_t letterSpacing = 1;
+
+const uint8_t letterBitmaps[][6] = {
+  // W (bottom-to-top rows)
+  {0b10001, 0b10001, 0b10001, 0b10101, 0b10101, 0b10001},
+  // E
+  {0b11111, 0b10000, 0b11110, 0b10000, 0b10000, 0b11111},
+  // R
+  {0b11110, 0b10001, 0b11110, 0b10100, 0b10010, 0b10001},
+  // N
+  {0b10001, 0b11001, 0b10101, 0b10011, 0b10001, 0b10001}
+};
+
+const uint8_t getLetterIndex(char c) {
+  switch (c) {
+    case 'W': return 0;
+    case 'E': return 1;
+    case 'R': return 2;
+    case 'N': return 3;
+    default: return 0;
+  }
+}
+
+void patternWerner() {
+  fillAll(CRGB::Black);
+  const uint8_t textLength = sizeof(scrollText) - 1;
+  const uint8_t wordWidth = textLength * (letterWidth + letterSpacing) - letterSpacing;
+  const uint8_t copySpacing = 2;
+  const uint8_t blockWidth = wordWidth + copySpacing;
+  uint8_t repeats = NUM_LEDS_PER_STRIP / blockWidth;
+  if (repeats == 0) {
+    repeats = 1;
+  }
+  const int totalWidth = repeats * blockWidth - copySpacing;
+  const int visibleWidth = NUM_LEDS_PER_STRIP;
+  const int scrollPeriod = visibleWidth + totalWidth;
+  const int startX = visibleWidth - (gHue % scrollPeriod);
+
+  for (uint8_t copyIndex = 0; copyIndex < repeats; copyIndex++) {
+    int wordX = startX + copyIndex * blockWidth;
+    for (uint8_t charIndex = 0; scrollText[charIndex] != '\0'; charIndex++) {
+      uint8_t letterIndex = getLetterIndex(scrollText[charIndex]);
+      int charX = wordX + charIndex * (letterWidth + letterSpacing);
+      CRGB color = CRGB::White;
+      for (uint8_t row = 0; row < letterHeight; row++) {
+        int stripIndex = row; // 0 = D1 bottom, 5 = top
+        for (uint8_t col = 0; col < letterWidth; col++) {
+          int displayCol = charX + col;
+          if (displayCol < 0 || displayCol >= NUM_LEDS_PER_STRIP) {
+            continue;
+          }
+          if (letterBitmaps[letterIndex][row] & (1 << (letterWidth - 1 - col))) {
+            leds[stripIndex][displayCol] = color;
+          }
+        }
+      }
+    }
+  }
+}
+
 void patternDiagonalChase() {
   fillAll(CRGB::Black);
   for (uint8_t strip = 0; strip < NUM_STRIPS; strip++) {
@@ -151,16 +214,26 @@ void logStatus() {
 }
 
 void updatePatternFromPot() {
+  static bool zeroMode = true;
+  const int zeroEnter = 80;
+  const int zeroExit = 120;
   int potValue = analogRead(POT_PIN);
-  if (potValue < 0 || potValue > 1023) {
-    currentPattern = 0;
-    Serial.println("Potentiometer read invalid, defaulting to pattern 0");
+  potValue = constrain(potValue, 0, 1023);
+  if (zeroMode) {
+    if (potValue > zeroExit) {
+      zeroMode = false;
+    }
   } else {
-    currentPattern = map(potValue, 0, 1023, 0, 9);
-    Serial.print("Pot value = ");
-    Serial.print(potValue);
-    Serial.print(", selecting pattern ");
-    Serial.println(currentPattern);
+    if (potValue < zeroEnter) {
+      zeroMode = true;
+    }
+  }
+
+  if (zeroMode) {
+    currentPattern = 0;
+  } else {
+    currentPattern = map(potValue, zeroExit, 1023, 1, 10);
+    currentPattern = constrain(currentPattern, 1, 10);
   }
 }
 
@@ -179,12 +252,12 @@ void setup() {
   currentPattern = 0;
   lastPattern = 255;
 
-  FastLED.addLeds<LED_TYPE, D4, COLOR_ORDER>(leds[0], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D1, COLOR_ORDER>(leds[0], NUM_LEDS_PER_STRIP);
   FastLED.addLeds<LED_TYPE, D2, COLOR_ORDER>(leds[1], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, D1, COLOR_ORDER>(leds[2], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, D6, COLOR_ORDER>(leds[3], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, D7, COLOR_ORDER>(leds[4], NUM_LEDS_PER_STRIP);
-  FastLED.addLeds<LED_TYPE, D5, COLOR_ORDER>(leds[5], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D4, COLOR_ORDER>(leds[2], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D5, COLOR_ORDER>(leds[3], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D6, COLOR_ORDER>(leds[4], NUM_LEDS_PER_STRIP);
+  FastLED.addLeds<LED_TYPE, D7, COLOR_ORDER>(leds[5], NUM_LEDS_PER_STRIP);
   FastLED.setBrightness(BRIGHTNESS);
   pinMode(POT_PIN, INPUT);
 }
@@ -194,33 +267,36 @@ void loop() {
 
   switch (currentPattern) {
     case 0:
-      patternRainbow();
+      patternWerner();
       break;
     case 1:
-      patternTheaterChase();
+      patternRainbow();
       break;
     case 2:
-      patternWave();
+      patternTheaterChase();
       break;
     case 3:
-      patternScanner();
+      patternWave();
       break;
     case 4:
-      patternSparkle();
+      patternScanner();
       break;
     case 5:
-      patternMirrorGradient();
+      patternSparkle();
       break;
     case 6:
-      patternDiagonalChase();
+      patternMirrorGradient();
       break;
     case 7:
-      patternEqualizer();
+      patternDiagonalChase();
       break;
     case 8:
-      patternStripPulse();
+      patternEqualizer();
       break;
     case 9:
+      patternStripPulse();
+      break;
+    case 10:
       patternStackedWaves();
       break;
   }
