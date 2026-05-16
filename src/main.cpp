@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include "werner_pattern.h"
 
 // NodeMCU V3 Pin Mapping (D-pins to GPIO)
 #define D0 16
@@ -94,67 +95,8 @@ void patternMirrorGradient() {
   }
 }
 
-const char scrollText[] = "WERNER";
-const uint8_t letterHeight = 6;
-const uint8_t letterWidth = 5;
-const uint8_t letterSpacing = 1;
-
-const uint8_t letterBitmaps[][6] = {
-  // W (bottom-to-top rows)
-  {0b10001, 0b10001, 0b10001, 0b10101, 0b10101, 0b10001},
-  // E
-  {0b11111, 0b10000, 0b11110, 0b10000, 0b10000, 0b11111},
-  // R
-  {0b11110, 0b10001, 0b11110, 0b10100, 0b10010, 0b10001},
-  // N
-  {0b10001, 0b11001, 0b10101, 0b10011, 0b10001, 0b10001}
-};
-
-const uint8_t getLetterIndex(char c) {
-  switch (c) {
-    case 'W': return 0;
-    case 'E': return 1;
-    case 'R': return 2;
-    case 'N': return 3;
-    default: return 0;
-  }
-}
-
 void patternWerner() {
-  fillAll(CRGB::Black);
-  const uint8_t textLength = sizeof(scrollText) - 1;
-  const uint8_t wordWidth = textLength * (letterWidth + letterSpacing) - letterSpacing;
-  const uint8_t copySpacing = 2;
-  const uint8_t blockWidth = wordWidth + copySpacing;
-  uint8_t repeats = NUM_LEDS_PER_STRIP / blockWidth;
-  if (repeats == 0) {
-    repeats = 1;
-  }
-  const int totalWidth = repeats * blockWidth - copySpacing;
-  const int visibleWidth = NUM_LEDS_PER_STRIP;
-  const int scrollPeriod = visibleWidth + totalWidth;
-  const int startX = visibleWidth - (gHue % scrollPeriod);
-
-  for (uint8_t copyIndex = 0; copyIndex < repeats; copyIndex++) {
-    int wordX = startX + copyIndex * blockWidth;
-    for (uint8_t charIndex = 0; scrollText[charIndex] != '\0'; charIndex++) {
-      uint8_t letterIndex = getLetterIndex(scrollText[charIndex]);
-      int charX = wordX + charIndex * (letterWidth + letterSpacing);
-      CRGB color = CRGB::White;
-      for (uint8_t row = 0; row < letterHeight; row++) {
-        int stripIndex = row; // 0 = D1 bottom, 5 = top
-        for (uint8_t col = 0; col < letterWidth; col++) {
-          int displayCol = charX + col;
-          if (displayCol < 0 || displayCol >= NUM_LEDS_PER_STRIP) {
-            continue;
-          }
-          if (letterBitmaps[letterIndex][row] & (1 << (letterWidth - 1 - col))) {
-            leds[stripIndex][displayCol] = color;
-          }
-        }
-      }
-    }
-  }
+  wernerPatternUpdate();
 }
 
 void patternDiagonalChase() {
@@ -250,6 +192,7 @@ void setup() {
   lastPatternIndex = 0;
   lastPattern = 255;
   patternChanged = false;
+  wernerPatternOnEnter();
 
   FastLED.addLeds<LED_TYPE, D1, COLOR_ORDER>(leds[0], NUM_LEDS_PER_STRIP);
   FastLED.addLeds<LED_TYPE, D2, COLOR_ORDER>(leds[1], NUM_LEDS_PER_STRIP);
@@ -263,7 +206,16 @@ void setup() {
 
 void loop() {
   updatePatternFromPot();
-  patternChanged = false;  // Clear flag after checking patterns
+
+  if (patternChanged) {
+    fillAll(CRGB::Black);
+    gHue = 0;
+    if (currentPattern == 0) {
+      wernerPatternOnEnter();
+    }
+    FastLED.show();
+    patternChanged = false;
+  }
 
   switch (currentPattern) {
     case 0:
