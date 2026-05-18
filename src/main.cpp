@@ -18,7 +18,7 @@
 #define NUM_LEDS_PER_STRIP 128
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
-#define BRIGHTNESS 120
+#define BRIGHTNESS 30
 
 const uint8_t DATA_PINS[NUM_STRIPS] = {D1, D2, D4, D5, D6, D7};
 const uint8_t POT_PIN = A0;
@@ -200,7 +200,6 @@ void setup() {
   FastLED.addLeds<LED_TYPE, D5, COLOR_ORDER>(leds[3], NUM_LEDS_PER_STRIP);
   FastLED.addLeds<LED_TYPE, D6, COLOR_ORDER>(leds[4], NUM_LEDS_PER_STRIP);
   FastLED.addLeds<LED_TYPE, D7, COLOR_ORDER>(leds[5], NUM_LEDS_PER_STRIP);
-  FastLED.setBrightness(BRIGHTNESS);
   pinMode(POT_PIN, INPUT);
 }
 
@@ -253,6 +252,7 @@ void loop() {
       break;
   }
 
+  FastLED.setBrightness(BRIGHTNESS);
   FastLED.show();
   logStatus();
   gHue++;
